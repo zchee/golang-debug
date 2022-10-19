@@ -1,0 +1,560 @@
+<html>
+	<head>
+		<script src="https://ajax.googleapis.com/ajax/libs/d3js/7.6.1/d3.min.js"></script>
+		<style>
+* {
+	padding: 0;
+	margin: 0;
+}
+html {
+	overflow: hidden;
+}
+body {
+	overflow: hidden;
+}
+#viewbox {
+	display: block;
+	image-rendering: pixelated;
+}
+		</style>
+	</head>
+	<body>
+		<canvas width="512" height="512" id="viewbox"></canvas>
+	</body>
+	<script>
+const viewbox = document.getElementById("viewbox");
+viewbox.width = document.body.clientWidth;
+viewbox.height = document.body.clientHeight;
+let state = null;
+
+// Create legend gradient.
+const viridis = [
+	"rgba(68, 1, 84, 255)",
+	"rgba(68, 2, 86, 255)",
+	"rgba(69, 4, 87, 255)",
+	"rgba(69, 5, 89, 255)",
+	"rgba(70, 7, 90, 255)",
+	"rgba(70, 8, 92, 255)",
+	"rgba(70, 10, 93, 255)",
+	"rgba(70, 11, 94, 255)",
+	"rgba(71, 13, 96, 255)",
+	"rgba(71, 14, 97, 255)",
+	"rgba(71, 16, 99, 255)",
+	"rgba(71, 17, 100, 255)",
+	"rgba(71, 19, 101, 255)",
+	"rgba(72, 20, 103, 255)",
+	"rgba(72, 22, 104, 255)",
+	"rgba(72, 23, 105, 255)",
+	"rgba(72, 24, 106, 255)",
+	"rgba(72, 26, 108, 255)",
+	"rgba(72, 27, 109, 255)",
+	"rgba(72, 28, 110, 255)",
+	"rgba(72, 29, 111, 255)",
+	"rgba(72, 31, 112, 255)",
+	"rgba(72, 32, 113, 255)",
+	"rgba(72, 33, 115, 255)",
+	"rgba(72, 35, 116, 255)",
+	"rgba(72, 36, 117, 255)",
+	"rgba(72, 37, 118, 255)",
+	"rgba(72, 38, 119, 255)",
+	"rgba(72, 40, 120, 255)",
+	"rgba(72, 41, 121, 255)",
+	"rgba(71, 42, 122, 255)",
+	"rgba(71, 44, 122, 255)",
+	"rgba(71, 45, 123, 255)",
+	"rgba(71, 46, 124, 255)",
+	"rgba(71, 47, 125, 255)",
+	"rgba(70, 48, 126, 255)",
+	"rgba(70, 50, 126, 255)",
+	"rgba(70, 51, 127, 255)",
+	"rgba(70, 52, 128, 255)",
+	"rgba(69, 53, 129, 255)",
+	"rgba(69, 55, 129, 255)",
+	"rgba(69, 56, 130, 255)",
+	"rgba(68, 57, 131, 255)",
+	"rgba(68, 58, 131, 255)",
+	"rgba(68, 59, 132, 255)",
+	"rgba(67, 61, 132, 255)",
+	"rgba(67, 62, 133, 255)",
+	"rgba(66, 63, 133, 255)",
+	"rgba(66, 64, 134, 255)",
+	"rgba(66, 65, 134, 255)",
+	"rgba(65, 66, 135, 255)",
+	"rgba(65, 68, 135, 255)",
+	"rgba(64, 69, 136, 255)",
+	"rgba(64, 70, 136, 255)",
+	"rgba(63, 71, 136, 255)",
+	"rgba(63, 72, 137, 255)",
+	"rgba(62, 73, 137, 255)",
+	"rgba(62, 74, 137, 255)",
+	"rgba(62, 76, 138, 255)",
+	"rgba(61, 77, 138, 255)",
+	"rgba(61, 78, 138, 255)",
+	"rgba(60, 79, 138, 255)",
+	"rgba(60, 80, 139, 255)",
+	"rgba(59, 81, 139, 255)",
+	"rgba(59, 82, 139, 255)",
+	"rgba(58, 83, 139, 255)",
+	"rgba(58, 84, 140, 255)",
+	"rgba(57, 85, 140, 255)",
+	"rgba(57, 86, 140, 255)",
+	"rgba(56, 88, 140, 255)",
+	"rgba(56, 89, 140, 255)",
+	"rgba(55, 90, 140, 255)",
+	"rgba(55, 91, 141, 255)",
+	"rgba(54, 92, 141, 255)",
+	"rgba(54, 93, 141, 255)",
+	"rgba(53, 94, 141, 255)",
+	"rgba(53, 95, 141, 255)",
+	"rgba(52, 96, 141, 255)",
+	"rgba(52, 97, 141, 255)",
+	"rgba(51, 98, 141, 255)",
+	"rgba(51, 99, 141, 255)",
+	"rgba(50, 100, 142, 255)",
+	"rgba(50, 101, 142, 255)",
+	"rgba(49, 102, 142, 255)",
+	"rgba(49, 103, 142, 255)",
+	"rgba(49, 104, 142, 255)",
+	"rgba(48, 105, 142, 255)",
+	"rgba(48, 106, 142, 255)",
+	"rgba(47, 107, 142, 255)",
+	"rgba(47, 108, 142, 255)",
+	"rgba(46, 109, 142, 255)",
+	"rgba(46, 110, 142, 255)",
+	"rgba(46, 111, 142, 255)",
+	"rgba(45, 112, 142, 255)",
+	"rgba(45, 113, 142, 255)",
+	"rgba(44, 113, 142, 255)",
+	"rgba(44, 114, 142, 255)",
+	"rgba(44, 115, 142, 255)",
+	"rgba(43, 116, 142, 255)",
+	"rgba(43, 117, 142, 255)",
+	"rgba(42, 118, 142, 255)",
+	"rgba(42, 119, 142, 255)",
+	"rgba(42, 120, 142, 255)",
+	"rgba(41, 121, 142, 255)",
+	"rgba(41, 122, 142, 255)",
+	"rgba(41, 123, 142, 255)",
+	"rgba(40, 124, 142, 255)",
+	"rgba(40, 125, 142, 255)",
+	"rgba(39, 126, 142, 255)",
+	"rgba(39, 127, 142, 255)",
+	"rgba(39, 128, 142, 255)",
+	"rgba(38, 129, 142, 255)",
+	"rgba(38, 130, 142, 255)",
+	"rgba(38, 130, 142, 255)",
+	"rgba(37, 131, 142, 255)",
+	"rgba(37, 132, 142, 255)",
+	"rgba(37, 133, 142, 255)",
+	"rgba(36, 134, 142, 255)",
+	"rgba(36, 135, 142, 255)",
+	"rgba(35, 136, 142, 255)",
+	"rgba(35, 137, 142, 255)",
+	"rgba(35, 138, 141, 255)",
+	"rgba(34, 139, 141, 255)",
+	"rgba(34, 140, 141, 255)",
+	"rgba(34, 141, 141, 255)",
+	"rgba(33, 142, 141, 255)",
+	"rgba(33, 143, 141, 255)",
+	"rgba(33, 144, 141, 255)",
+	"rgba(33, 145, 140, 255)",
+	"rgba(32, 146, 140, 255)",
+	"rgba(32, 146, 140, 255)",
+	"rgba(32, 147, 140, 255)",
+	"rgba(31, 148, 140, 255)",
+	"rgba(31, 149, 139, 255)",
+	"rgba(31, 150, 139, 255)",
+	"rgba(31, 151, 139, 255)",
+	"rgba(31, 152, 139, 255)",
+	"rgba(31, 153, 138, 255)",
+	"rgba(31, 154, 138, 255)",
+	"rgba(30, 155, 138, 255)",
+	"rgba(30, 156, 137, 255)",
+	"rgba(30, 157, 137, 255)",
+	"rgba(31, 158, 137, 255)",
+	"rgba(31, 159, 136, 255)",
+	"rgba(31, 160, 136, 255)",
+	"rgba(31, 161, 136, 255)",
+	"rgba(31, 161, 135, 255)",
+	"rgba(31, 162, 135, 255)",
+	"rgba(32, 163, 134, 255)",
+	"rgba(32, 164, 134, 255)",
+	"rgba(33, 165, 133, 255)",
+	"rgba(33, 166, 133, 255)",
+	"rgba(34, 167, 133, 255)",
+	"rgba(34, 168, 132, 255)",
+	"rgba(35, 169, 131, 255)",
+	"rgba(36, 170, 131, 255)",
+	"rgba(37, 171, 130, 255)",
+	"rgba(37, 172, 130, 255)",
+	"rgba(38, 173, 129, 255)",
+	"rgba(39, 173, 129, 255)",
+	"rgba(40, 174, 128, 255)",
+	"rgba(41, 175, 127, 255)",
+	"rgba(42, 176, 127, 255)",
+	"rgba(44, 177, 126, 255)",
+	"rgba(45, 178, 125, 255)",
+	"rgba(46, 179, 124, 255)",
+	"rgba(47, 180, 124, 255)",
+	"rgba(49, 181, 123, 255)",
+	"rgba(50, 182, 122, 255)",
+	"rgba(52, 182, 121, 255)",
+	"rgba(53, 183, 121, 255)",
+	"rgba(55, 184, 120, 255)",
+	"rgba(56, 185, 119, 255)",
+	"rgba(58, 186, 118, 255)",
+	"rgba(59, 187, 117, 255)",
+	"rgba(61, 188, 116, 255)",
+	"rgba(63, 188, 115, 255)",
+	"rgba(64, 189, 114, 255)",
+	"rgba(66, 190, 113, 255)",
+	"rgba(68, 191, 112, 255)",
+	"rgba(70, 192, 111, 255)",
+	"rgba(72, 193, 110, 255)",
+	"rgba(74, 193, 109, 255)",
+	"rgba(76, 194, 108, 255)",
+	"rgba(78, 195, 107, 255)",
+	"rgba(80, 196, 106, 255)",
+	"rgba(82, 197, 105, 255)",
+	"rgba(84, 197, 104, 255)",
+	"rgba(86, 198, 103, 255)",
+	"rgba(88, 199, 101, 255)",
+	"rgba(90, 200, 100, 255)",
+	"rgba(92, 200, 99, 255)",
+	"rgba(94, 201, 98, 255)",
+	"rgba(96, 202, 96, 255)",
+	"rgba(99, 203, 95, 255)",
+	"rgba(101, 203, 94, 255)",
+	"rgba(103, 204, 92, 255)",
+	"rgba(105, 205, 91, 255)",
+	"rgba(108, 205, 90, 255)",
+	"rgba(110, 206, 88, 255)",
+	"rgba(112, 207, 87, 255)",
+	"rgba(115, 208, 86, 255)",
+	"rgba(117, 208, 84, 255)",
+	"rgba(119, 209, 83, 255)",
+	"rgba(122, 209, 81, 255)",
+	"rgba(124, 210, 80, 255)",
+	"rgba(127, 211, 78, 255)",
+	"rgba(129, 211, 77, 255)",
+	"rgba(132, 212, 75, 255)",
+	"rgba(134, 213, 73, 255)",
+	"rgba(137, 213, 72, 255)",
+	"rgba(139, 214, 70, 255)",
+	"rgba(142, 214, 69, 255)",
+	"rgba(144, 215, 67, 255)",
+	"rgba(147, 215, 65, 255)",
+	"rgba(149, 216, 64, 255)",
+	"rgba(152, 216, 62, 255)",
+	"rgba(155, 217, 60, 255)",
+	"rgba(157, 217, 59, 255)",
+	"rgba(160, 218, 57, 255)",
+	"rgba(162, 218, 55, 255)",
+	"rgba(165, 219, 54, 255)",
+	"rgba(168, 219, 52, 255)",
+	"rgba(170, 220, 50, 255)",
+	"rgba(173, 220, 48, 255)",
+	"rgba(176, 221, 47, 255)",
+	"rgba(178, 221, 45, 255)",
+	"rgba(181, 222, 43, 255)",
+	"rgba(184, 222, 41, 255)",
+	"rgba(186, 222, 40, 255)",
+	"rgba(189, 223, 38, 255)",
+	"rgba(192, 223, 37, 255)",
+	"rgba(194, 223, 35, 255)",
+	"rgba(197, 224, 33, 255)",
+	"rgba(200, 224, 32, 255)",
+	"rgba(202, 225, 31, 255)",
+	"rgba(205, 225, 29, 255)",
+	"rgba(208, 225, 28, 255)",
+	"rgba(210, 226, 27, 255)",
+	"rgba(213, 226, 26, 255)",
+	"rgba(216, 226, 25, 255)",
+	"rgba(218, 227, 25, 255)",
+	"rgba(221, 227, 24, 255)",
+	"rgba(223, 227, 24, 255)",
+	"rgba(226, 228, 24, 255)",
+	"rgba(229, 228, 25, 255)",
+	"rgba(231, 228, 25, 255)",
+	"rgba(234, 229, 26, 255)",
+	"rgba(236, 229, 27, 255)",
+	"rgba(239, 229, 28, 255)",
+	"rgba(241, 229, 29, 255)",
+	"rgba(244, 230, 30, 255)",
+	"rgba(246, 230, 32, 255)",
+	"rgba(248, 230, 33, 255)",
+	"rgba(251, 231, 35, 255)",
+	"rgba(253, 231, 37, 255)",
+];
+
+function computeLayer(info, viewRect) {
+	const viewArea = (viewRect.x1-viewRect.x0)*(viewRect.y1-viewRect.y0)
+	let w = info.minDuration*info.tileSize;
+	let h = info.minMemChunk*info.tileSize;
+	let layer = info.depth-1;
+	while (layer > 0) {
+		const tileArea = w*h;
+		if (tileArea > viewArea/8) {
+			break;
+		}
+		w *= info.magFactor;
+		h *= info.magFactor;
+		layer--;
+	}
+	return [layer, w, h];
+}
+
+function computeScale(viewRect, tileTime, tileMem, tileSize) {
+	const timeScaling = ((viewRect.x1 - viewRect.x0)/viewbox.width) / (tileTime / tileSize);
+	const memScaling = ((viewRect.y1 - viewRect.y0)/viewbox.height) / (tileMem / tileSize);
+	return [timeScaling, -memScaling];
+}
+
+function computeCoords(viewRect, t, a) {
+	const x = (t-viewRect.x0)/(viewRect.x1-viewRect.x0)*viewbox.width;
+	const y = (viewRect.y1-a)/(viewRect.y1-viewRect.y0)*viewbox.height;
+	return [x, y];
+}
+
+function convertMovement(viewRect, dx, dy) {
+	const pixPerNano = viewbox.width/(viewRect.x1 - viewRect.x0);
+	const pixPerByte = -viewbox.height/(viewRect.y1 - viewRect.y0);
+	return [dx/pixPerNano, dy/pixPerByte];
+}
+
+function computeLocation(viewRect, x, y) {
+	const t = x/viewbox.width*(viewRect.x1-viewRect.x0) + viewRect.x0;
+	const a = viewRect.y1 - y/viewbox.height*(viewRect.y1-viewRect.y0);
+	return [t, a];
+}
+
+function alignDown(x, align) {
+	return Math.floor(x/align)*align;
+}
+
+function alignUp(x, align) {
+	return Math.ceil(x/align)*align;
+}
+
+function update() {
+	let ctx = viewbox.getContext('2d');
+	ctx.imageSmoothingEnabled = false;
+
+	// Wipe clean.
+	ctx.beginPath();
+	ctx.rect(0, 0, viewbox.width, viewbox.height);
+	ctx.fillStyle = "#383838";
+	ctx.fill();
+	ctx.closePath();
+
+	// Fetch or draw tiles.
+	const [layer, tileTime, tileMem] = computeLayer(state.info, state.viewRect);
+	const [scaleT, scaleA] = computeScale(state.viewRect, tileTime, tileMem, state.info.tileSize);
+
+	let timeStart = Math.max(state.viewRect.x0, 0);
+	let timeEnd = Math.min(state.viewRect.x1, state.info.duration);
+	timeStart = alignDown(timeStart, tileTime);
+	timeEnd = alignUp(timeEnd, tileTime);
+
+	let addrStart = Math.max(state.viewRect.y0, state.info.minAddr);
+	let addrEnd = Math.min(state.viewRect.y1, state.info.maxAddr);
+	addrStart = alignDown(addrStart, tileMem);
+	addrEnd = alignUp(addrEnd, tileMem);
+
+	for (let t = timeStart; t < timeEnd; t += tileTime) {
+		for (let a = addrStart; a < addrEnd; a += tileMem) {
+			const key = `${t}_${a}_${layer}`;
+			let imgData = null;
+			if (state.imageMap.has(key)) {
+				imgData = state.imageMap.get(key);
+			}
+			if (imgData !== null && imgData.fetching === false) { 
+				const [x, y] = computeCoords(state.viewRect, t, a);
+				ctx.drawImage(imgData.img, x, y, state.info.tileSize/scaleT, state.info.tileSize/scaleA);
+			} else if (imgData === null) {
+				state.imageMap.set(key, {fetching: true, img: null});
+				fetch(`./tile?t=${t}&a=${a}&d=${layer}`)
+					.then(response => {
+						if (!response.ok) {
+							state.imageMap.delete(key);
+							throw new Error("data fetch failed");
+						}
+						return response.blob();
+					})
+					.then(imgBlob => {
+						let img = new Image();
+						img.onload = event => {
+							state.imageMap.set(key, {fetching: false, img: img});
+							update();
+						};
+						img.src = URL.createObjectURL(imgBlob);
+					});
+			}
+		}
+	}
+
+	// Title.
+	ctx.fillStyle = "#282828";
+	ctx.fillRect(0, 0, viewbox.width, 36);
+	ctx.font = "18px monospace";
+	ctx.fillStyle = "#ffffff";
+	ctx.strokeStyle = "#000000";
+	ctx.textAlign = "center";
+	ctx.fillText(state.info.filename, viewbox.width/2, 24);
+
+	// Legend.
+	const legendGrad = ctx.createLinearGradient(16, 72, 16, 264);
+	legendGrad.addColorStop(0, "black");
+	for (let i = 0; i < viridis.length/16; i++) {
+		legendGrad.addColorStop(i/(viridis.length/16), viridis[16*i]);
+	}
+	legendGrad.addColorStop(1, viridis[viridis.length-1]);
+	ctx.textAlign = "left";
+	ctx.beginPath();
+	ctx.rect(16, 64, 16, 200);
+	ctx.fillStyle = legendGrad;
+	ctx.fill();
+	ctx.strokeStyle = "white";
+	ctx.stroke();
+	ctx.moveTo(44, 72);
+	ctx.lineTo(40, 72);
+	ctx.lineTo(40, 264);
+	ctx.lineTo(44, 264);
+	ctx.stroke();
+	ctx.closePath();
+
+	ctx.font = "12px monospace";
+	ctx.fillStyle = "#eeeeee";
+	ctx.fillText("Occupancy", 16, 52);
+	ctx.fillText("0%", 48, 76); 
+	ctx.fillText("100%", 48, 268); 
+
+	redrawMousePosition(ctx);
+
+	// TODO(mknyszek): Clean up unused tiles.
+}
+
+function redrawMousePosition(ctx) {
+	// Mouse position.
+	const [cursorT, cursorA] = computeLocation(state.viewRect, state.cursorX, state.cursorY);
+
+	ctx.font = "20px monospace";
+	ctx.textAlign = "center";
+	const posStr = "( " + (cursorT/1e9).toFixed(9) + "s , " + " 0x"+Math.floor(cursorA).toString(16) + " )";
+	const posSize = ctx.measureText(posStr);
+	ctx.fillStyle = "#282828";
+	ctx.fillRect(viewbox.width/2-posSize.width/2-8, viewbox.height-36, posSize.width+16, 36);
+	ctx.fillStyle = "#ffffff";
+	ctx.fillText(posStr, viewbox.width/2, viewbox.height-12);
+	ctx.closePath();
+}
+
+const xCoord = document.getElementById("xcoord");
+const yCoord = document.getElementById("ycoord");
+viewbox.addEventListener("mousemove", event => {
+	if (state === null) {
+		return;
+	}
+	state.hovering = true;
+	state.cursorX = event.offsetX;
+	state.cursorY = event.offsetY;
+
+	if (!state.dragging) {
+		redrawMousePosition(viewbox.getContext('2d'));
+		return;
+	}
+
+	const dx = state.dragStartX - event.offsetX;
+	const dy = state.dragStartY - event.offsetY;
+	const [dt, da] = convertMovement(state.viewRect, dx, dy);
+	state.viewRect.x0 += dt;
+	state.viewRect.x1 += dt;
+	state.viewRect.y0 += da;
+	state.viewRect.y1 += da;
+	state.dragStartX = event.offsetX;
+	state.dragStartY = event.offsetY;
+
+	update();
+})
+viewbox.addEventListener("mousedown", event => {
+	if (state === null) {
+		return;
+	}
+	if (state.dragging) {
+		return;
+	}
+	state.dragging = true;
+	state.dragStartX = event.offsetX;
+	state.dragStartY = event.offsetY;
+})
+viewbox.addEventListener("mouseup", event => {
+	if (state === null) {
+		return;
+	}
+	state.dragging = false;
+})
+viewbox.addEventListener("mouseout", event => {
+	if (state === null) {
+		return;
+	}
+	state.hovering = false;
+})
+viewbox.addEventListener("wheel", event => {
+	if (state === null) {
+		return;
+	}
+	if (!state.hovering) {
+		return;
+	}
+	const [fixedT, fixedA] = computeLocation(state.viewRect, state.cursorX, state.cursorY);
+	let w = state.viewRect.x1 - state.viewRect.x0;
+	let h = state.viewRect.y1 - state.viewRect.y0;
+	const rt = (fixedT - state.viewRect.x0) / w;
+	const ra = (fixedA - state.viewRect.y0) / h;
+	w += event.deltaY*0.001*w;
+	h += event.deltaY*0.001*h;;
+	if (w < state.info.minDuration*state.info.tileSize) {
+		w = state.info.minDuration*state.info.tileSize;
+	}
+	if (h < state.info.minMemChunk*state.info.tileSize) {
+		h = state.info.minMemChunk*state.info.tileSize;
+	}
+	const x0 = fixedT - rt*w;
+	const y0 = fixedA - ra*h;
+	state.viewRect = {x0: x0, x1: x0+w, y0: y0, y1: y0+h};
+	update();
+})
+
+function reset(info) {
+	let ratio = info.minMemChunk/info.minDuration;
+	state = {
+		viewRect: {
+			x0: 0,
+			y0: info.minAddr,
+			x1: info.duration,
+			y1: info.minAddr + info.duration*ratio*(viewbox.height/viewbox.width),
+		},
+		imageMap: new Map(),
+		dragging: false,
+		dragStartX: 0,
+		dragStartY: 0,
+		cursorX: 0,
+		cursorY: 0,
+		hovering: false,
+		info: info,
+	};
+	update();
+}
+
+fetch(`./info`)
+	.then(response => {
+		if (!response.ok) {
+			throw new Error("data fetch failed");
+		}
+		return response.json();
+	})
+	.then(info => {
+		reset(info);
+	});
+	</script>
+</html>
